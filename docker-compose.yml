@@ -16,5 +16,18 @@ services:
     volumes:
       - mongo-catalogo-data:/data/db
 
+  postgres-pedidos:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pedidos
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./pedidos-service/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres-pedidos-data:/var/lib/postgresql/data
+
 volumes:
   mongo-catalogo-data:
+  postgres-pedidos-data:
