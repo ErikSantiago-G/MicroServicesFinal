@@ -1,6 +1,8 @@
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
 import { MongoClient, ObjectId } from "mongodb";
+import { consultarStock, reservarStock } from "./inventarioClient";
+
 
 const MONGO_URL = process.env.MONGO_URL ?? "mongodb://localhost:27018";
 const PORT = Number(process.env.PORT ?? 4000);
@@ -12,6 +14,13 @@ const typeDefs = `#graphql
     nombre: String!
     descripcion: String
     precio: Float!
+    stock: Int
+  }
+
+  type ResultadoReserva {
+    exito: Boolean!
+    mensaje: String!
+    stockRestante: Int!
   }
 
   input ProductoInput {
@@ -29,6 +38,7 @@ const typeDefs = `#graphql
 
   type Mutation {
     crearProducto(input: ProductoInput!): Producto!
+    reservarStock(sku: String!, cantidad: Int!): ResultadoReserva!
   }
 `;
 
@@ -60,6 +70,17 @@ async function main() {
   });
 
   const resolvers = {
+    Producto: {
+      // Solo se ejecuta si el cliente pide el campo "stock"
+      stock: async (producto: { sku: string }) => {
+        try {
+          return await consultarStock(producto.sku);
+        } catch (err) {
+          console.error("Error consultando inventario:", err);
+          return null;
+        }
+      },
+    },
     Query: {
       productos: async () => (await productos.find().toArray()).map(toProducto),
       producto: async (_: unknown, { id }: { id: string }) => {
@@ -77,6 +98,17 @@ async function main() {
         const doc = { ...input };
         const result = await productos.insertOne(doc);
         return toProducto({ _id: result.insertedId, ...doc });
+      },
+      reservarStock: async (
+        _: unknown,
+        { sku, cantidad }: { sku: string; cantidad: number }
+      ) => {
+        const res = await reservarStock(sku, cantidad);
+        return {
+          exito: res.exito,
+          mensaje: res.mensaje,
+          stockRestante: res.stock_restante,
+        };
       },
     },
   };
