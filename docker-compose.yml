@@ -8,6 +8,11 @@ services:
       - "3307:3306"
     volumes:
       - ./inventario-service/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   mongo-catalogo:
     image: mongo:7
@@ -15,6 +20,11 @@ services:
       - "27018:27017"
     volumes:
       - mongo-catalogo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   postgres-pedidos:
     image: postgres:16
@@ -27,6 +37,58 @@ services:
     volumes:
       - ./pedidos-service/db/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres-pedidos-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pedidos"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  inventario:
+    build:
+      context: .
+      dockerfile: inventario-service/Dockerfile
+    environment:
+      DB_HOST: mysql-inventario
+      DB_PORT: "3306"
+      PORT: "50051"
+    ports:
+      - "50051:50051"
+    depends_on:
+      mysql-inventario:
+        condition: service_healthy
+
+  catalogo:
+    build:
+      context: .
+      dockerfile: catalogo-service/Dockerfile
+    environment:
+      MONGO_URL: mongodb://mongo-catalogo:27017
+      INVENTARIO_URL: inventario:50051
+      PORT: "4000"
+    ports:
+      - "4000:4000"
+    depends_on:
+      mongo-catalogo:
+        condition: service_healthy
+      inventario:
+        condition: service_started
+
+  pedidos:
+    build:
+      context: .
+      dockerfile: pedidos-service/Dockerfile
+    environment:
+      DB_HOST: postgres-pedidos
+      DB_PORT: "5432"
+      CATALOGO_URL: http://catalogo:4000/
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres-pedidos:
+        condition: service_healthy
+      catalogo:
+        condition: service_started
 
 volumes:
   mongo-catalogo-data:

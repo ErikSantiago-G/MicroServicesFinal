@@ -1,0 +1,7 @@
+FROM node:20-alpine
+WORKDIR /app
+COPY pedidos-service/package*.json ./
+RUN npm ci
+COPY pedidos-service/tsconfig.json ./
+COPY pedidos-service/src ./src
+CMD ["npm", "run", "dev"]

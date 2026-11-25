@@ -3,7 +3,7 @@ import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import mysql from "mysql2/promise";
 
-const PROTO_PATH = path.join(__dirname, "../../proto/inventario.proto");
+const PROTO_PATH = process.env.PROTO_PATH ?? path.join(__dirname, "../../proto/inventario.proto");
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST ?? "localhost",

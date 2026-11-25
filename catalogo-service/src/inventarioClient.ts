@@ -2,7 +2,7 @@ import path from "path";
 import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 
-const PROTO_PATH = path.join(__dirname, "../../proto/inventario.proto");
+const PROTO_PATH = process.env.PROTO_PATH ?? path.join(__dirname, "../../proto/inventario.proto");
 const INVENTARIO_URL = process.env.INVENTARIO_URL ?? "localhost:50051";
 
 const definition = protoLoader.loadSync(PROTO_PATH, { keepCase: true });
