@@ -40,3 +40,11 @@ export function reservarStock(sku: string, cantidad: number): Promise<ResultadoR
     });
   });
 }
+export function liberarStock(sku: string, cantidad: number): Promise<ResultadoReserva> {
+  return new Promise((resolve, reject) => {
+    client.liberarStock({ producto_id: sku, cantidad }, (err: any, res: any) => {
+      if (err) return reject(err);
+      resolve(res);
+    });
+  });
+}

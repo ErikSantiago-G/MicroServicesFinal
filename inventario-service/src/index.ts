@@ -71,8 +71,33 @@ async function reservarStock(
   }
 }
 
+async function liberarStock(
+  call: grpc.ServerUnaryCall<any, any>,
+  callback: grpc.sendUnaryData<any>
+) {
+  try {
+    const { producto_id, cantidad } = call.request;
+    if (cantidad <= 0) {
+      return callback({ code: grpc.status.INVALID_ARGUMENT, message: "La cantidad debe ser mayor a 0" });
+    }
+    const [result]: any = await pool.query(
+      "UPDATE stock SET cantidad = cantidad + ? WHERE sku = ?",
+      [cantidad, producto_id]
+    );
+    if (result.affectedRows === 0) {
+      return callback(null, { exito: false, mensaje: "Producto inexistente", stock_restante: 0 });
+    }
+    const [rows]: any = await pool.query("SELECT cantidad FROM stock WHERE sku = ?", [producto_id]);
+    callback(null, { exito: true, mensaje: "Stock liberado", stock_restante: rows[0].cantidad });
+  } catch (err) {
+    console.error(err);
+    callback({ code: grpc.status.INTERNAL, message: "Error interno" });
+  }
+}
+
 const server = new grpc.Server();
-server.addService(proto.Inventario.service, { consultarStock, reservarStock });
+
+server.addService(proto.Inventario.service, { consultarStock, reservarStock, liberarStock });
 
 const PORT = process.env.PORT ?? "50051";
 server.bindAsync(`0.0.0.0:${PORT}`, grpc.ServerCredentials.createInsecure(), (err) => {

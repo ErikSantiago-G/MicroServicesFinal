@@ -1,7 +1,7 @@
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
 import { MongoClient, ObjectId } from "mongodb";
-import { consultarStock, reservarStock } from "./inventarioClient";
+import { consultarStock, reservarStock, liberarStock } from "./inventarioClient";
 
 
 const MONGO_URL = process.env.MONGO_URL ?? "mongodb://localhost:27018";
@@ -39,6 +39,7 @@ const typeDefs = `#graphql
   type Mutation {
     crearProducto(input: ProductoInput!): Producto!
     reservarStock(sku: String!, cantidad: Int!): ResultadoReserva!
+    liberarStock(sku: String!, cantidad: Int!): ResultadoReserva!
   }
 `;
 
@@ -104,6 +105,17 @@ async function main() {
         { sku, cantidad }: { sku: string; cantidad: number }
       ) => {
         const res = await reservarStock(sku, cantidad);
+        return {
+          exito: res.exito,
+          mensaje: res.mensaje,
+          stockRestante: res.stock_restante,
+        };
+      },
+            liberarStock: async (
+        _: unknown,
+        { sku, cantidad }: { sku: string; cantidad: number }
+      ) => {
+        const res = await liberarStock(sku, cantidad);
         return {
           exito: res.exito,
           mensaje: res.mensaje,

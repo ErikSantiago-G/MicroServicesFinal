@@ -5,6 +5,7 @@ package inventario;
 service Inventario {
   rpc ConsultarStock (ConsultarStockRequest) returns (StockResponse);
   rpc ReservarStock (ReservarStockRequest) returns (ReservarStockResponse);
+  rpc LiberarStock (ReservarStockRequest) returns (ReservarStockResponse);
 }
 
 message ConsultarStockRequest {
